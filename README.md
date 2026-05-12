@@ -59,17 +59,21 @@ inference-time guidance, timestep localization, guided diffusion sampling
 
 ---
 
-## References
+## Citation
 
 ```bibtex
 @misc{lanzo2026windowed,
   title  = {Windowed Minority Guidance: Preliminary Evidence for Timestep-Localized Effects in Diffusion Denoising},
   author = {Vittoria Lanzo},
   year   = {2026},
-  note   = {Accepted at EEML 2026},
+  note   = {Extended abstract, EEML 2026},
   url    = {https://github.com/VittoriaLanzo/windowed-minority-guidance}
 }
+```
 
+## References
+
+```bibtex
 @inproceedings{dhariwal2021diffusion,
   title     = {Diffusion Models Beat {GAN}s on Image Synthesis},
   author    = {Prafulla Dhariwal and Alexander Nichol},
