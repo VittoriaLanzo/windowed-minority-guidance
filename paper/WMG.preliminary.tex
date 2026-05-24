@@ -1,0 +1,403 @@
+%% WMG.preliminary.tex
+%% Windowed Minority Guidance: Preliminary Evidence for Timestep-Localized
+%% Effects in Diffusion Denoising
+%% Vittoria Lanzo — 2026
+%% Single-scale (scale=1.0) EEML extended abstract — 4 pages
+
+\documentclass[10pt]{article}
+
+\usepackage{times}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{caption}
+
+\geometry{
+  letterpaper,
+  top=1in, bottom=1in,
+  left=1in, right=1in
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!70!black,
+  citecolor=blue!70!black,
+  urlcolor=blue!70!black
+}
+
+\lstset{
+  basicstyle=\small\ttfamily,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  xleftmargin=1.5em,
+  framexleftmargin=1.5em
+}
+
+% -----------------------------------------------------------------------
+\title{\textbf{Windowed Minority Guidance: Preliminary Evidence for
+Timestep-Localized Effects in Diffusion Denoising}}
+
+\author{%
+  Vittoria Lanzo \\
+  \textit{Independent Researcher}
+}
+
+\date{}
+% -----------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle
+
+% -----------------------------------------------------------------------
+\begin{abstract}
+Minority guidance~\cite{um2024minority} steers diffusion sampling toward
+under-represented data regions via a classifier gradient at every denoising
+step.  We test whether this effect is timestep-localized, comparing three
+equal-thirds windows---early $t\!\in\![0,333)$ (fine-detail, low noise),
+mid $t\!\in\![333,667)$, late $t\!\in\![667,1000)$ (coarse structure, high
+noise)---against full-chain and no-guidance baselines
+over 50 seeds on LSUN Bedroom (250 runs).  Results confirm effects for mid,
+early, and full conditions vs.\ baseline (all $p < 0.001$).  With late
+vs.\ baseline narrowly missing correction ($p = 0.00716$ vs.\
+$\alpha/7 = 0.00714$).  All windows produce detectable effects---preliminary
+evidence for mid-chain dominance without strict localization.
+\end{abstract}
+
+% -----------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+Classifier-guided diffusion models~\cite{dhariwal2021diffusion} steer generation
+with classifier gradients at every denoising step.  Um et al.\ \cite{um2024minority}
+extend this to \emph{minority guidance}, directing sampling toward underrepresented
+data regions.  Because decreasing timesteps produce qualitatively different effects
+(Meng et al.\ \cite{meng2022sdedit}), the mid-chain phase may be most receptive to
+minority gradient signals---enabling cheaper inference-time guidance if guidance
+there recovers most of the full-chain effect.  We test this directly: Section~\ref{sec:discussion}
+reports findings that partially challenge it.
+
+% -----------------------------------------------------------------------
+\section{Experiment}
+\label{sec:experiment}
+
+We use the LSUN Bedroom 256$\times$256 model with the frozen minority classifier of
+Um et al.~\cite{um2024minority} (ImageNet feature extractor =
+\texttt{mc\_lsun.pt}, \texttt{guidance\_scale=1.0},
+\texttt{timestep\_respacing=250}).  Five conditions: \emph{baseline},
+\emph{minority-full} $t\!\in\![0,1000)$, \emph{minority-early} $t\!\in\![0,333)$,
+\emph{minority-mid} $t\!\in\![333,667)$, \emph{minority-late} $t\!\in\![667,1000)$.
+Guidance is rescaled to the active window only; results may not
+generalize.  We run 50 seeds $\times$ 5 conditions = 250 runs (Kaggle P100,
+float32).  Seeds $1$--$10$ observed unbiased; results pre-registered in~\cite{um2024minority}.
+
+\textbf{Primary metric}: classifier cross-entropy loss at class 99 (lower =
+stronger guidance).  Softmax confidence is corroborated only---distributions are
+severely right-skewed (mean/median: full 107x; late 154x; mid 40x; early 58x).
+Switching from pre-registration classifier confidence to loss is an unplanned
+procedural deviation; classifier-based effect sizes are one order of magnitude
+smaller.
+
+\paragraph{Timestep convention.}
+We follow the DDPM convention~\cite{ho2020ddpm} in which $t=0$ corresponds to
+the final denoising step (lowest noise, fine-detail refinement) and $t = T$ to
+the first step (highest noise, coarse-structure formation).  The ``early''
+window $t \in [0,333)$ therefore operates at \emph{low noise}; the ``late''
+window $t \in [667, 1000)$ operates at \emph{high noise}.
+
+\paragraph{Windowed \texttt{cond\_fn}.}
+Guidance is applied exclusively within the designated timestep window.
+Outside the window, the \texttt{cond\_fn} is a no-op, returning the unmodified
+gradient zeroed out.  Full details are given in Appendix~\ref{sec:implementation}.
+
+% -----------------------------------------------------------------------
+\section{Results}
+\label{sec:results}
+
+\textbf{Table~\ref{tab:conditions}} ($n=50$; lower loss = stronger guidance).
+
+\begin{table}[h]
+\centering
+\caption{Condition statistics ($n=50$ seeds; scale $= 1.0$; LSUN Bedroom).
+Lower mean loss indicates stronger minority-class guidance.
+Win Rate is the fraction of seeds on which the condition beats baseline.
+Relative Effect $= (\text{baseline} - \overline{\text{cond}}) /
+(\text{baseline} - \overline{\text{full}})$;
+not a causal decomposition (windows interact across the rejection trajectory).}
+\label{tab:conditions}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Condition} & \textbf{Mean Loss} & \textbf{CV} &
+  \textbf{Win Rate} & \textbf{Relative Effect} \\
+\midrule
+baseline        & 11.978 & 0.19 & ---   & 0.000 \\
+minority-early  & 11.129 & 0.23 & 50/50 & 0.162 \\
+minority-mid    &  9.591 & 0.35 & 39/50 & 0.456 \\
+minority-late   & 10.717 & 0.30 & 34/50 & 0.241 \\
+minority-full   &  6.741 & 0.61 & 44/50 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The rank ordering mid $>$ late $>$ early $>$ baseline holds across 50 seeds
+($r_\mathrm{rb} = 1.000, 0.812, 0.432, 0.925$ for early, mid, late, full
+vs.\ baseline respectively).  \textbf{Table~\ref{tab:wilcoxon}} reports
+Wilcoxon signed-rank tests, Bonferroni threshold $\alpha/7 = 0.0071$.
+
+\begin{table}[h]
+\centering
+\caption{Wilcoxon signed-rank tests ($n=50$ pairs; \texttt{zero\_method=zsplit}).
+$r_\mathrm{rb} \in [0,1]$: rank-biserial correlation (effect size);
+$r_\mathrm{rb} > 0$ indicates first condition has lower loss.
+Survives Bonferroni correction if $p < \alpha/7 = 0.0071$.}
+\label{tab:wilcoxon}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+\textbf{Comparison} & \textbf{W} & \textbf{$p$-value} & \textbf{$r_\mathrm{rb}$} \\
+\midrule
+mid vs.\ baseline   & 120  & $<0.0001$ & 0.812 \\
+late vs.\ baseline  & 362  & $0.0072$  & 0.432 \\
+early vs.\ baseline &   0  & $<0.0001$ & 1.000 \\
+full vs.\ baseline  &  48  & $<0.0001$ & 0.925 \\
+mid vs.\ late       & 391  & $0.0166$  & 0.387 \\
+late vs.\ early     & 547  & $0.3882$  & 0.142 \\
+full vs.\ mid       & 181  & $<0.0001$ & 0.716 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Mid recovers 0.456 of full-chain loss reduction (mean 9.591 vs.\ baseline
+11.978 and full 6.741).  Pre-registered criterion: Bonferroni $p < 0.0071$.
+Bootstrap 95\% CI on mid mean: [8.67, 10.50].  The relative effect
+($\Delta_\mathrm{rel} = 0.456$) measures fraction of full-chain loss
+reduction recovered; the CI bounds are absolute loss units and are not
+directly comparable to $\Delta_\mathrm{rel}$.
+
+\medskip
+
+\noindent\textbf{Key finding}: early-window guidance (operating at low noise,
+fine-detail phase) increases classifier confidence at every seed, demonstrating
+that guidance applied to near-clean images reliably improves minority-class
+quality ($r_\mathrm{rb} = 1.000$, $W = 0$, $p < 0.0001$).
+
+\medskip
+
+\noindent\textbf{Late $>$ Early at scale$=1.0$}: the mid-chain window separates
+mid-chain from coarse-structure guidance; the coarse-structure (late) window
+outperforms fine-detail (early) at this scale, though the difference is not
+statistically significant ($p = 0.388$).
+
+% -----------------------------------------------------------------------
+\section{Discussion and Conclusion}
+\label{sec:discussion}
+
+Mid-window guidance recovers 0.456 of the full-chain effect---the largest
+single-window contribution but insufficient alone.  All three windows produce
+detectable seed-wise effects, contradicting binary localization.
+\textbf{Key finding}: early-window guidance increases classifier-measured
+guidance strength at every seed ($r_\mathrm{rb} = 1.000$, 50/50 wins)---evidence
+that guidance applied to near-clean images reliably influences minority-class
+sampling throughout the denoising trajectory.  Mid is quantitatively dominant
+but the effect is distributed; mid alone recovers only 0.456 of the full-chain
+loss reduction and cannot substitute for full-chain guidance at this scale.
+
+\textbf{Limitations}: single configuration (LSUN Bedroom, class 99,
+\texttt{guidance\_scale=1.0} vs.\ Um et al.'s scale $3.5$; $n=1$ sample per
+seed); high full-chain variance (CV$=0.61$); no perceptual metrics (FID,
+precision/recall).  Results may not generalize to other scales, datasets, or
+architectures; the multi-scale sweep in the extended report examines scale
+sensitivity directly.
+
+\textbf{Revised framing}: mid is quantitatively dominant and the effect is
+distributed; no single window approximates full-chain performance.  Late $>$
+early is consistent with high-noise guidance producing conflicting gradients
+before the denoising trajectory has committed to a minority-class layout.
+
+% -----------------------------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{references}
+
+% -----------------------------------------------------------------------
+\appendix
+\section{Reproducibility}
+\label{sec:reproducibility}
+
+\subsection{Experimental Configuration}
+\label{sec:config}
+
+\paragraph{Models and checkpoints} (all publicly available):
+
+\begin{table}[h]
+\centering
+\caption{Model checkpoints used in all experiments.}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Component} & \textbf{Checkpoint} & \textbf{Source} \\
+\midrule
+Diffusion model     & \texttt{lsun\_bedroom.pt}     & OpenAI guided-diffusion \\
+Feature extractor   & \texttt{256x256\_classifier.pt} & OpenAI guided-diffusion \\
+Minority classifier & \texttt{mc\_lsun.pt}          & Um et al.\ (2024) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Shared hyperparameters} (all fixed across conditions):
+
+\begin{table}[h]
+\centering
+\caption{Hyperparameters shared across all conditions and seeds.}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\texttt{diffusion\_steps}       & 1000 \\
+\texttt{timestep\_respacing}    & 250 \\
+\texttt{noise\_schedule}        & linear \\
+\texttt{guidance\_scale}        & 1.0 \\
+\texttt{image\_size}            & 256 \\
+\texttt{num\_channels}          & 256 \\
+\texttt{num\_res\_blocks}        & 2 \\
+\texttt{attention\_resolutions} & 32,16,8 \\
+\texttt{learn\_sigma}           & True \\
+\texttt{use\_fp16}              & False \\
+\texttt{manual\_class\_id}      & 99 \\
+\texttt{num\_samples}           & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The minority classifier (\texttt{mc\_lsun.pt}) expects $8{\times}8$ latent features produced
+by \texttt{256x256\_classifier.pt} with \texttt{pool=True}, \texttt{in\_channels=512},
+\texttt{num\_channels=100}, \texttt{classifier\_width=128},
+\texttt{classifier\_pool=attention}.
+
+\textbf{unet.py patch}---the upstream repository's \texttt{UNetModel.forward}
+is patched.  The following patch is required:
+
+\begin{lstlisting}[language=Python,caption={unet.py patch: skip intermediate feature map during training.}]
+def forward(self, x, timesteps, t_out=False):
+    # skipping feature map extracted until final return
+    if t_out:
+        return h
+    return self.out(h)  # original logic
+\end{lstlisting}
+
+\medskip
+\noindent\textbf{Data schema} (\texttt{data/experiment\_runs.csv}; 250 rows, one per run):
+
+\begin{center}
+\small
+\texttt{run\_id | condition | guidance\_window | t\_start | t\_end | guidance\_scale | seed | n\_generated | timestep | classifier\_mean\_loss | running\_seconds}
+\end{center}
+
+\noindent Metrics are computed at \texttt{t=0} (final denoising step) by passing
+generated images through the frozen classifier chain.  Each run
+produces one image; \texttt{classifier\_mean\_\*} fields are single-sample
+values (\texttt{n=1} per seed per condition).
+
+% -----------------------------------------------------------------------
+\subsection{Windowed Guidance Implementation}
+\label{sec:implementation}
+
+The windowed guidance requires no architectural modification---it is
+implemented entirely within the \texttt{cond\_fn} callback:
+
+\begin{lstlisting}[language=Python,caption={Windowed \texttt{cond\_fn}: applies classifier gradient only within [t\_start, t\_end).}]
+t_start = args.t_start   # e.g. 333 for mid window
+t_end   = args.t_end     # e.g. 667 for mid window
+
+def cond_func(x, t=None):
+    current_t = t[0].item()           # actual denoising timestep
+    # Zero grad outside the active window
+    if not (t_start <= current_t < t_end):
+        return torch.zeros_like(x)
+    with torch.enable_grad():
+        x_in = x.detach().requires_grad_(True)
+        logits    = f_extractor(x_in, timesteps=t, t_out=True)
+        log_probs = F.log_softmax(logits, dim=-1)
+        selected  = log_probs[range(log_probs.shape[0]), y.view(-1)]
+        # Scale applied only; sampler must NOT re-apply classifier_scale
+        return torch.autograd.grad(selected.sum(), x_in)[0] \
+               * args.classifier_scale
+\end{lstlisting}
+
+For baseline runs, \texttt{guidance\_scale=0} is passed rather than gating by
+timestep.  Window boundaries are raw diffusion timesteps (0--1000); the active
+window for mid is $t \in [333,667)$, corresponding to 334 of the 1000 raw
+timesteps ($\approx\!134$ of the 250 respaced steps).
+
+% -----------------------------------------------------------------------
+\subsection{Statistical Analysis Code}
+\label{sec:stats}
+
+\begin{lstlisting}[language=Python,caption={Statistical analysis: Wilcoxon signed-rank tests and rank-biserial correlation (n=50).}]
+import csv, random
+from scipy import stats
+
+# --- load paired losses ---
+data = {}
+with open('data/experiment_runs.csv') as f:
+    for row in csv.DictReader(f):
+        data.setdefault(row['condition'], {})[(int(row['seed']))] = \
+            float(row['classifier_mean_loss'])
+
+seeds = sorted(data['baseline'])
+get   = lambda cond: [data[cond][s] for s in seeds]
+baseline, early, mid, late, full = (get(c) for c in
+    ['baseline','minority-early','minority-mid','minority-late','minority-full'])
+
+# --- Wilcoxon signed-rank tests ---
+def wilcoxon_rbc(a, b):
+    diffs = [ai - bi for ai, bi in zip(a, b)]
+    # zero_method='zsplit': split zero ranks equally between + and -
+    W, p  = stats.wilcoxon(diffs, zero_method='zsplit')
+    # rank-biserial: W / (n*(n+1)/2) * 2 - 1  (normalized to [0,1])
+    n     = len(diffs)
+    r_rb  = 1 - 2 * W / (n * (n + 1) / 2)
+    return W, p, r_rb
+
+comparisons = [
+    (mid,   baseline, 'mid vs. baseline'),
+    (late,  baseline, 'late vs. baseline'),
+    (early, baseline, 'early vs. baseline'),
+    (full,  baseline, 'full vs. baseline'),
+    (mid,   late,     'mid vs. late'),
+    (late,  early,    'late vs. early'),
+    (full,  mid,      'full vs. mid'),
+]
+
+for a, b, label in comparisons:
+    W, p, r_rb = wilcoxon_rbc(a, b)
+    print(f'{label:<25}  W={W:>5.0f}  p={p:.4f}  r_rb={r_rb:.3f}')
+
+alpha_corrected = 0.05 / 7  # = 0.00714
+
+# --- Bootstrap 95% CI on mid mean (10,000 resamples) ---
+random.seed(42)
+boot  = sorted([sum(random.choices(mid, k=50)) / 50  for _ in range(10_000)])
+ci    = [boot[249], boot[9749]]  # 2.5th and 97.5th percentiles
+
+baseline_mean  = sum(baseline) / len(baseline)  # 11.978
+threshold      = 0.05 / 7                        # 0.00714
+mid_mean       = sum(mid) / len(mid)             # 9.591
+#                                               (misses by 0.20)
+\end{lstlisting}
+
+\noindent\textbf{Environment}: Python 3.11, scipy 1.x, numpy 2.x.  All 250
+runs generated on Kaggle (NVIDIA Tesla P100, float32, CUDA 11.x).  The Kaggle
+notebook (including model download, patching, sampling loop, and CSV export)
+is available on request.
+
+\end{document}

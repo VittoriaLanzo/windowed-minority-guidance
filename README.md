@@ -2,7 +2,7 @@
 
 **Vittoria Lanzo** · Independent Researcher
 
-*Submitted to EEML 2026 · Admission pending*
+*Accepted at EEML 2026*
 
 ---
 
@@ -41,13 +41,13 @@ misses correction.
 ![Page 3](./docs/preview/page-3.png)
 ![Page 4](./docs/preview/page-4.png)
 
-📄 Download: [windowed-minority-guidance.pdf](./windowed-minority-guidance.pdf)
+📄 [windowed-minority-guidance.pdf](./windowed-minority-guidance.pdf) · [WMG.preliminary.pdf](./paper/WMG.preliminary.pdf) · [WMG.preliminary.tex](./paper/WMG.preliminary.tex) (LaTeX source)
 
 ## Reproduce
 
 🔗 [windowed-minority-guidance-experiment](https://www.kaggle.com/code/vittorialanzo/windowed-minority-guidance-experiment)
 
-Run at . Um et al. (2024) report results at ; the windowed
+Run at guidance_scale=1.0. Um et al. (2024) report results at guidance_scale=3.5; the windowed
 effects measured here may not generalize to the published scale and require validation there.
 
 ---
@@ -59,15 +59,40 @@ inference-time guidance, timestep localization, guided diffusion sampling
 
 ---
 
-## References
+## Citation
 
 ```bibtex
 @misc{lanzo2026windowed,
   title  = {Windowed Minority Guidance: Preliminary Evidence for Timestep-Localized Effects in Diffusion Denoising},
   author = {Vittoria Lanzo},
   year   = {2026},
-  note   = {Submitted to EEML 2026; admission pending},
-  url    = {https://www.kaggle.com/code/vittorialanzo/windowed-minority-guidance-experiment}
+  note   = {Extended abstract, EEML 2026},
+  url    = {https://github.com/VittoriaLanzo/windowed-minority-guidance}
+}
+```
+
+## References
+
+```bibtex
+@inproceedings{dhariwal2021diffusion,
+  title     = {Diffusion Models Beat {GAN}s on Image Synthesis},
+  author    = {Prafulla Dhariwal and Alexander Nichol},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2021}
+}
+
+@inproceedings{ho2020denoising,
+  title     = {Denoising Diffusion Probabilistic Models},
+  author    = {Jonathan Ho and Ajay Jain and Pieter Abbeel},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2020}
+}
+
+@inproceedings{meng2022sdedit,
+  title     = {{SDEdit}: Guided Image Synthesis and Editing with Stochastic Differential Equations},
+  author    = {Chenlin Meng and Yutong He and Yang Song and Jiaming Song and Jiajun Wu and Jun-Yan Zhu and Stefano Ermon},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2022}
 }
 
 @inproceedings{um2024dont,
@@ -77,3 +102,20 @@ inference-time guidance, timestep localization, guided diffusion sampling
   year      = {2024}
 }
 ```
+
+---
+
+> **Timestep Convention.** In DDPM, the reverse (denoising) process runs from t=T **down** to
+> t=0. Therefore t=1000 corresponds to the very first denoising step (near-pure noise, coarse
+> structure formation) and t=0 corresponds to the final step (clean image, fine-detail
+> refinement). Concretely:
+>
+> | Window | t range | Noise level | Denoising phase |
+> |--------|---------|-------------|-----------------|
+> | early  | [0, 333)   | low  | fine-detail refinement |
+> | mid    | [333, 667) | intermediate | semantic layout |
+> | late   | [667, 1000) | high | coarse structure |
+>
+> The "early" window therefore operates at **low noise** (late in denoising time) and the "late"
+> window at **high noise** (early in denoising time). Window names follow the t-axis order used
+> in the paper, not the temporal order of denoising steps.
