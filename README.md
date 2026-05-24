@@ -2,7 +2,7 @@
 
 **Vittoria Lanzo** · Independent Researcher
 
-*Accepted at EEML 2026*
+*Extended abstract, EEML 2026*
 
 ---
 
@@ -18,20 +18,16 @@ Um et al. (2024) report at 3.5, and generalization to that scale requires valida
 
 ---
 
-> **Timestep Convention.** In DDPM, the reverse (denoising) process runs from t=T **down** to
-> t=0. Therefore t=1000 corresponds to the very first denoising step (near-pure noise, coarse
-> structure formation) and t=0 corresponds to the final step (clean image, fine-detail
-> refinement). Concretely:
+> **Timestep Convention.** Window names follow the **numerical magnitude of the timestep index t**,
+> not the chronological order of the DDPM reverse process. "Early" (t∈[0,333)) corresponds to
+> low-noise timesteps (fine-detail refinement); "late" (t∈[667,1000)) to high-noise timesteps
+> (coarse-structure formation). Concretely:
 >
 > | Window | t range | Noise level | Denoising phase |
 > |--------|---------|-------------|-----------------|
-> | early  | [0, 333)   | low  | fine-detail refinement |
-> | mid    | [333, 667) | intermediate | semantic layout |
-> | late   | [667, 1000) | high | coarse structure |
->
-> The "early" window therefore operates at **low noise** (late in denoising time) and the "late"
-> window at **high noise** (early in denoising time). Window names follow the t-axis order used
-> in the paper, not the temporal order of denoising steps.
+> | early  | [0, 333)    | low          | fine-detail refinement |
+> | mid    | [333, 667)  | intermediate | semantic layout        |
+> | late   | [667, 1000) | high         | coarse structure       |
 
 ---
 

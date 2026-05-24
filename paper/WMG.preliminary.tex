@@ -101,17 +101,18 @@ float32).  Seeds $1$--$10$ observed unbiased; results pre-registered in~\cite{um
 
 \textbf{Primary metric}: classifier cross-entropy loss at class 99 (lower =
 stronger guidance).  Softmax confidence is corroborated only---distributions are
-severely right-skewed (mean/median: full 107x; late 154x; mid 40x; early 58x).
+severely right-skewed (mean/median: full 108x; late 154x; mid 46x; early 58x).
 Switching from pre-registration classifier confidence to loss is an unplanned
 procedural deviation; classifier-based effect sizes are one order of magnitude
 smaller.
 
 \paragraph{Timestep convention.}
-We follow the DDPM convention~\cite{ho2020ddpm} in which $t=0$ corresponds to
-the final denoising step (lowest noise, fine-detail refinement) and $t = T$ to
-the first step (highest noise, coarse-structure formation).  The ``early''
-window $t \in [0,333)$ therefore operates at \emph{low noise}; the ``late''
-window $t \in [667, 1000)$ operates at \emph{high noise}.
+Window names follow the \emph{numerical magnitude of the timestep
+index~$t$}, not the chronological order of the DDPM reverse
+process~\cite{ho2020ddpm}.  ``Early'' ($t\!\in\![0,333)$) therefore
+corresponds to \emph{low-noise} timesteps (fine-detail refinement);
+``late'' ($t\!\in\![667,1000)$) to \emph{high-noise} timesteps
+(coarse-structure formation).
 
 \paragraph{Windowed \texttt{cond\_fn}.}
 Guidance is applied exclusively within the designated timestep window.
